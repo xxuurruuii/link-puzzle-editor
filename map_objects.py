@@ -89,7 +89,7 @@ class Simpleloop(MapObject):
 class EndPoint(MapObject):
     name = "端点"
     layer_id = "cell_center"
-    z_index = 10
+    z_index = 101
     placement_type = "cell"
     has_number = True      # 开启数字编辑
 
@@ -186,7 +186,7 @@ class Slitherlink(MapObject):
 
 class Solve_mode(MapObject):
     """画线/画叉工具 (特殊的连续操作物品)"""
-    name = "TrySolve"
+    name = "试解"
     z_index = 100
     placement_type = "edge"
     is_continuous_tool = True # 标记为连续工具
@@ -196,6 +196,18 @@ class Solve_mode(MapObject):
         self.data['dir'] = direction  # 'right' or 'down'
         self.data['style'] = style    # 'line' or 'cross'
         self.layer_id = f"edge_{direction}" # 动态层级
+
+    @classmethod
+    def from_dict(cls, data):
+        """重写反序列化，确保 direction 被正确传入 init 以生成正确的 layer_id"""
+        d = data.get('data', {})
+        # 提取方向和样式，传入构造函数
+        return cls(
+            data['x'], 
+            data['y'], 
+            direction=d.get('dir', 'right'), 
+            style=d.get('style', 'line')
+        )
 
     def draw(self, screen, cam_x, cam_y):
         sx, sy = self.get_screen_pos(cam_x, cam_y)

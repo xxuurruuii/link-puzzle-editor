@@ -58,7 +58,7 @@ class GridEditor:
             y += h + gap
 
         # 功能按钮
-        funcs = [("CLEAR", "CLEAR"), ("LOAD", "IMPORT"), ("SAVE", "EXPORT"), ("SOLVE_ONE", "SOLVE"), ("DEDUCT", "DEDUCT")]
+        funcs = [("清空", "WIPE"), ("!重置", "CLEAR"), ("LOAD", "IMPORT"), ("SAVE", "EXPORT"), ("SOLVE_ONE", "SOLVE"), ("DEDUCT", "DEDUCT")]
         for text, action in funcs:
             self.buttons.append(Button(x, y, w, h, text, self.font, action))
             y += h + gap
@@ -211,6 +211,10 @@ class GridEditor:
                                 self.objects = []
                                 self.cam_x, self.cam_y = 50, 50
                                 self.show_msg("已重置")
+                            elif btn.data == "WIPE":
+                                # 保留所有不是 Solve_mode 类型的对象
+                                self.objects = [obj for obj in self.objects if not isinstance(obj, Solve_mode)]
+                                self.show_msg("已清除所有连线/标记")
                             elif btn.data == "SOLVE":
                                 # 1. 获取解
                                 # 注意：这里我们传入当前的 self.objects 的字典形式
