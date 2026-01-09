@@ -17,6 +17,7 @@ class MapObject:
     has_number = False       # 是否支持通过数字键修改数值
     has_direction = False    # 是否支持通过拖拽设定方向
     is_continuous_tool = False # 是否是连续绘图工具 (如画线)
+    num_limit = 10           # 可填入的数字上限
 
     def __init__(self, gx, gy):
         self.gx = gx
@@ -119,10 +120,11 @@ class YajilinArrow(MapObject):
     placement_type = "cell"
     has_number = True      # 开启数字编辑
     has_direction = True   # 开启方向拖拽
+    num_limit = 100        # 可输入两位数
 
     def __init__(self, gx, gy):
         super().__init__(gx, gy)
-        self.data['num'] = 1
+        self.data['num'] = 0
         self.data['dir'] = 'up'
 
     def configure_on_creation(self, start_pos, end_pos):
@@ -169,7 +171,7 @@ class Slitherlink(MapObject):
 
     def __init__(self, gx, gy):
         super().__init__(gx, gy)
-        self.data['num'] = 1
+        self.data['num'] = 0
 
     def draw(self, screen, cam_x, cam_y):
         sx, sy = self.get_screen_pos(cam_x, cam_y)

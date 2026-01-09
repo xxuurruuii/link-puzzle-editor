@@ -25,11 +25,19 @@ def render_scene(editor):
         hgx, hgy = editor.screen_to_grid(mx, my, current_cls.placement_type)
         sx, sy = editor.grid_to_screen(hgx, hgy)
         
+        # 创建一个全屏大小的透明层用于绘制半透明光标
+        # 注意: (R, G, B, A) 中的 A 控制透明度 (0-255)
+        ghost_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        
         if current_cls.placement_type == 'vertex':
-            pygame.draw.circle(screen, (150, 150, 150), (sx, sy), 6)
+            # 格点光标: 空心圆形, 半透明灰色
+            pygame.draw.circle(ghost_surf, (150, 150, 150, 150), (sx, sy), 16, 2)
         elif current_cls.placement_type == 'cell':
-            pygame.draw.rect(screen, (100, 100, 100), (sx, sy, CELL_SIZE, CELL_SIZE), 2)
-        # edge 类型的光标可以根据需要扩展
+            # 格内光标: 半透明边框矩形
+            pygame.draw.rect(ghost_surf, (100, 100, 100, 150), (sx, sy, CELL_SIZE, CELL_SIZE), 2)
+        
+        # 将绘制好的半透明层叠加到主屏幕上
+        screen.blit(ghost_surf, (0, 0))
 
     # 3. 绘制拖拽辅助线 (如箭头方向指示)
     current_cls = ITEM_REGISTRY[editor.selected_item_idx]

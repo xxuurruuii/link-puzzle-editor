@@ -145,16 +145,36 @@ class GridEditor:
 
             # 键盘: 快捷键与数值修改
             elif event.type == pygame.KEYDOWN:
-                 if event.key == pygame.K_r: self.cam_x, self.cam_y = 50, 50
-                 if event.unicode.isdigit():
+                if event.key == pygame.K_r: self.cam_x, self.cam_y = 50, 50
+                # 键入数字
+                if event.unicode.isdigit():
                     candidates = [
                         o for o in self.objects 
                         if o.gx == hgx and o.gy == hgy and o.has_number and isinstance(o, current_cls)
                     ]
                     candidates.sort(key=lambda o: o.z_index, reverse=True)
                     if candidates:
-                        candidates[0].data['num'] = int(event.unicode)
-                        self.show_msg(f"数值设为 {event.unicode}")
+                        obj = candidates[0]
+                        digit = int(event.unicode)
+                        current_val = obj.data.get('num', 0)
+                        limit = getattr(obj, 'num_limit', 10)
+                        
+                        new_val = current_val * 10 + digit
+                        
+                        # 如果拼接后达到或超过上限，则重置为当前输入的数字
+                        if new_val >= limit:
+                            new_val = digit
+                        
+                        obj.data['num'] = new_val
+                # 键入空格，清空数字
+                if event.key == pygame.K_SPACE:
+                    candidates = [
+                        o for o in self.objects 
+                        if o.gx == hgx and o.gy == hgy and o.has_number and isinstance(o, current_cls)
+                    ]
+                    candidates.sort(key=lambda o: o.z_index, reverse=True)
+                    if candidates:
+                        candidates[0].data['num'] = 0
 
             # 鼠标按下
             elif event.type == pygame.MOUSEBUTTONDOWN:
