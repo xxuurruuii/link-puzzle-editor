@@ -196,6 +196,32 @@ class Slitherlink(MapObject):
         txt = font.render(str(self.data['num']), True, (0, 0, 0))
         screen.blit(txt, txt.get_rect(center=rect.center))
 
+class MasyuW(MapObject):
+    name = "Masyu白"
+    layer_id = "cell_center"
+    z_index = 10
+    placement_type = "cell"
+
+    def draw(self, screen, cam_x, cam_y):
+        sx, sy = self.get_screen_pos(cam_x, cam_y)
+        center = (sx + CELL_SIZE // 2, sy + CELL_SIZE // 2)
+        radius = int(CELL_SIZE * 0.35)
+        # 绘制白圆：黑边，白底
+        pygame.draw.circle(screen, (255, 255, 255), center, radius)
+        pygame.draw.circle(screen, (0, 0, 0), center, radius, 2)
+
+class MasyuB(MapObject):
+    name = "Masyu黑"
+    layer_id = "cell_center"
+    z_index = 10
+    placement_type = "cell"
+
+    def draw(self, screen, cam_x, cam_y):
+        sx, sy = self.get_screen_pos(cam_x, cam_y)
+        center = (sx + CELL_SIZE // 2, sy + CELL_SIZE // 2)
+        radius = int(CELL_SIZE * 0.35)
+        # 绘制黑圆：实心黑色
+        pygame.draw.circle(screen, (0, 0, 0), center, radius)
 
 class Solve_mode(MapObject):
     """画线/画叉工具 (特殊的连续操作物品)"""
@@ -248,4 +274,4 @@ class Solve_mode(MapObject):
 
 # --- 注册表 ---
 # 如果添加新物品，只需在这里注册，并在上面定义类即可
-ITEM_REGISTRY = [FloorCell, EndPoint, Simpleloop, Wall, YajilinArrow, Slitherlink, Solve_mode]
+ITEM_REGISTRY = [FloorCell, EndPoint, Simpleloop, Wall, YajilinArrow, Slitherlink, MasyuW, MasyuB, Solve_mode]
