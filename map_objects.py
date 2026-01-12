@@ -117,7 +117,7 @@ class EndPoint(MapObject):
         pygame.draw.circle(screen, (255, 100, 100), center, int(cell_size * 0.3))
         
         # 2. 绘制数字
-        font = pygame.font.SysFont('Arial', cell_size * 0.32, bold=True)
+        font = pygame.font.SysFont('Arial', int(cell_size * 0.32), bold=True)
         # 使用白色文字 (255, 255, 255) 以便在红底上清晰显示，如果背景色浅也可以改用黑色
         txt = font.render(str(self.data.get('num', 1)), True, (255, 255, 255))
         txt_rect = txt.get_rect(center=center)
@@ -192,7 +192,7 @@ class Slitherlink(MapObject):
         pygame.draw.rect(screen, (255, 255, 255), rect)
         pygame.draw.rect(screen, (0, 0, 0), rect, 2)
         
-        font = pygame.font.SysFont('Arial', cell_size * 0.32, bold=True)
+        font = pygame.font.SysFont('Arial', int(cell_size * 0.32), bold=True)
         txt = font.render(str(self.data['num']), True, (0, 0, 0))
         screen.blit(txt, txt.get_rect(center=rect.center))
 
