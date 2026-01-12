@@ -72,7 +72,6 @@ class FloorCell(MapObject):
         pygame.draw.rect(screen, CELL_COLOR, rect)
         pygame.draw.rect(screen, (200, 200, 200), rect, 2)
 
-
 class Simpleloop(MapObject):
     name = "Simpleloop"
     layer_id = "floor_simpleloop"
@@ -83,9 +82,21 @@ class Simpleloop(MapObject):
         sx, sy = self.get_screen_pos(cam_x, cam_y)
         s = pygame.Surface((CELL_SIZE, CELL_SIZE))
         s.set_alpha(30) # 设置半透明
-        s.fill((0, 255, 0)) 
+        s.fill((0, 255, 0)) # 绿色
         screen.blit(s, (sx, sy))
 
+class Wall(MapObject):
+    name = "Wall"
+    layer_id = "floor_wall"     
+    z_index = 5            # 渲染层级
+    placement_type = "cell"
+
+    def draw(self, screen, cam_x, cam_y):
+        sx, sy = self.get_screen_pos(cam_x, cam_y)
+        s = pygame.Surface((CELL_SIZE, CELL_SIZE))
+        s.set_alpha(30)  
+        s.fill((0, 0, 0))  # 黑色
+        screen.blit(s, (sx, sy))
 
 class EndPoint(MapObject):
     name = "端点"
@@ -237,4 +248,4 @@ class Solve_mode(MapObject):
 
 # --- 注册表 ---
 # 如果添加新物品，只需在这里注册，并在上面定义类即可
-ITEM_REGISTRY = [FloorCell, EndPoint, YajilinArrow, Simpleloop, Slitherlink, Solve_mode]
+ITEM_REGISTRY = [FloorCell, EndPoint, Simpleloop, Wall, YajilinArrow, Slitherlink, Solve_mode]

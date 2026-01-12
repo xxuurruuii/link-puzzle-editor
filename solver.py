@@ -28,6 +28,7 @@ def _build_model(problem_data):
     endpoints = {}
     simpleloops = set()
     slitherlinks = []
+    walls = set() 
     
     max_num = 0
 
@@ -43,6 +44,8 @@ def _build_model(problem_data):
         elif t == 'Simpleloop':
             valid_cells.add(pos)
             simpleloops.add(pos)
+        elif t == 'Wall':
+            walls.add(pos)
         elif t == 'EndPoint':
             valid_cells.add(pos)
             num = obj.get('data', {}).get('num', 0)
@@ -137,23 +140,33 @@ def _build_model(problem_data):
             
             degree = count_true(neighbors)
             
-            if pos not in valid_cells:
-                # 非法区域 (未放置 FloorCell)，强制为空
-                solver.ensure(degree == 0)
-                solver.ensure(path_id[y, x] == 0)
-            elif pos in endpoints:
+            # 标记：当前格子是否受到特殊线索的约束
+            is_constrained = False
+            
+            if pos in endpoints:
                 # 端点：度数必须为 1，且 ID 固定
                 solver.ensure(degree == 1)
                 solver.ensure(path_id[y, x] == endpoints[pos])
-            elif pos in simpleloops:
+                is_constrained = True
+            if pos in walls:
+                # 墙壁约束: 必须没有任何线条经过
+                solver.ensure(degree == 0)
+                solver.ensure(path_id[y, x] == 0)
+                is_constrained = True
+            if pos in simpleloops:
                 # Simpleloop: 必须有线经过 (度数为2，且ID非0)
                 solver.ensure(degree == 2)
                 solver.ensure(path_id[y, x] != 0)
-            else:
-                # 普通地板：度数只能是 0 (空) 或 2 (通路)
-                # 且度数为 0 时 ID 为 0
-                solver.ensure((degree == 0) | (degree == 2))
-                solver.ensure((degree == 0) == (path_id[y, x] == 0))
+                is_constrained = True
+            if not is_constrained:
+                if pos in valid_cells:
+                    # 普通地板：可以是通路(2)也可以是空(0)
+                    solver.ensure((degree == 0) | (degree == 2))
+                    solver.ensure((degree == 0) == (path_id[y, x] == 0))
+                else:
+                    # 空白区域/非法区域：必须为空
+                    solver.ensure(degree == 0)
+                    solver.ensure(path_id[y, x] == 0)
 
     # Slitherlink约束
     for obj in slitherlinks:
