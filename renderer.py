@@ -8,13 +8,15 @@ def render_scene(editor):
     """渲染主循环的一帧"""
     screen = editor.screen
     screen.fill(BG_COLOR)
+    screen_w, screen_h = screen.get_size()
+    cs = editor.cell_size
     
     # 1. 绘制所有地图物品
     for obj in editor.objects:
         sx, sy = editor.grid_to_screen(obj.gx, obj.gy)
         # 视锥剔除 (Off-screen culling)
-        if -CELL_SIZE < sx < SCREEN_WIDTH and -CELL_SIZE < sy < SCREEN_HEIGHT:
-            obj.draw(screen, editor.cam_x, editor.cam_y)
+        if -cs < sx < screen_w and -cs < sy < screen_h:
+            obj.draw(screen, editor.cam_x, editor.cam_y, cs)
 
     # 2. 绘制幽灵光标 (预览位置)
     mx, my = pygame.mouse.get_pos()
@@ -31,10 +33,10 @@ def render_scene(editor):
         
         if current_cls.placement_type == 'vertex':
             # 格点光标: 空心圆形, 半透明灰色
-            pygame.draw.circle(ghost_surf, (150, 150, 150, 150), (sx, sy), 16, 2)
+            pygame.draw.circle(ghost_surf, (150, 150, 150, 150), (sx, sy), int(cs * 0.32), 2)
         elif current_cls.placement_type == 'cell':
             # 格内光标: 半透明边框矩形
-            pygame.draw.rect(ghost_surf, (100, 100, 100, 150), (sx, sy, CELL_SIZE, CELL_SIZE), 2)
+            pygame.draw.rect(ghost_surf, (100, 100, 100, 150), (sx, sy, cs, cs), 2)
         
         # 将绘制好的半透明层叠加到主屏幕上
         screen.blit(ghost_surf, (0, 0))

@@ -53,9 +53,9 @@ class MapObject:
         obj.data = data.get('data', {})
         return obj
 
-    def get_screen_pos(self, cam_x, cam_y):
+    def get_screen_pos(self, cam_x, cam_y, cell_size):
         """获取物品逻辑坐标对应的屏幕像素坐标 (左上角)"""
-        return self.gx * CELL_SIZE + cam_x, self.gy * CELL_SIZE + cam_y
+        return self.gx * cell_size + cam_x, self.gy * cell_size + cam_y
 
 
 # --- 具体物品实现 ---
@@ -66,9 +66,9 @@ class FloorCell(MapObject):
     z_index = 0
     placement_type = "cell"
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        rect = pygame.Rect(sx, sy, CELL_SIZE, CELL_SIZE)
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        rect = pygame.Rect(sx, sy, cell_size, cell_size)
         pygame.draw.rect(screen, CELL_COLOR, rect)
         pygame.draw.rect(screen, (200, 200, 200), rect, 2)
 
@@ -78,9 +78,9 @@ class Simpleloop(MapObject):
     z_index = 5
     placement_type = "cell"
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        s = pygame.Surface((CELL_SIZE, CELL_SIZE))
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        s = pygame.Surface((cell_size, cell_size))
         s.set_alpha(30) # 设置半透明
         s.fill((0, 255, 0)) # 绿色
         screen.blit(s, (sx, sy))
@@ -91,9 +91,9 @@ class Wall(MapObject):
     z_index = 5            # 渲染层级
     placement_type = "cell"
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        s = pygame.Surface((CELL_SIZE, CELL_SIZE))
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        s = pygame.Surface((cell_size, cell_size))
         s.set_alpha(30)  
         s.fill((0, 0, 0))  # 黑色
         screen.blit(s, (sx, sy))
@@ -109,15 +109,15 @@ class EndPoint(MapObject):
         super().__init__(gx, gy)
         self.data['num'] = 1
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        center = (sx + CELL_SIZE // 2, sy + CELL_SIZE // 2)
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        center = (sx + cell_size // 2, sy + cell_size // 2)
         
         # 1. 绘制背景圆
-        pygame.draw.circle(screen, (255, 100, 100), center, int(CELL_SIZE * 0.3))
+        pygame.draw.circle(screen, (255, 100, 100), center, int(cell_size * 0.3))
         
         # 2. 绘制数字
-        font = pygame.font.SysFont('Arial', 16, bold=True)
+        font = pygame.font.SysFont('Arial', cell_size * 0.32, bold=True)
         # 使用白色文字 (255, 255, 255) 以便在红底上清晰显示，如果背景色浅也可以改用黑色
         txt = font.render(str(self.data.get('num', 1)), True, (255, 255, 255))
         txt_rect = txt.get_rect(center=center)
@@ -148,13 +148,13 @@ class YajilinArrow(MapObject):
             else:
                 self.data['dir'] = 'down' if dy > 0 else 'up'
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        cx, cy = sx + CELL_SIZE//2, sy + CELL_SIZE//2
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        cx, cy = sx + cell_size//2, sy + cell_size//2
         
         # 绘制背景
-        pygame.draw.circle(screen, (240, 240, 240), (cx, cy), int(CELL_SIZE * 0.4))
-        pygame.draw.circle(screen, (50, 50, 50), (cx, cy), int(CELL_SIZE * 0.4), 2)
+        pygame.draw.circle(screen, (240, 240, 240), (cx, cy), int(cell_size * 0.4))
+        pygame.draw.circle(screen, (50, 50, 50), (cx, cy), int(cell_size * 0.4), 2)
         
         # 绘制数字
         font = pygame.font.SysFont('Arial', 14, bold=True)
@@ -162,7 +162,7 @@ class YajilinArrow(MapObject):
         screen.blit(txt, txt.get_rect(center=(cx, cy)))
 
         # 绘制三角形箭头
-        offset = CELL_SIZE * 0.35
+        offset = int(cell_size * 0.35)
         pts = []
         d = self.data['dir']
         if d == 'up': pts = [(cx, cy-offset), (cx-5, cy-offset+8), (cx+5, cy-offset+8)]
@@ -184,15 +184,15 @@ class Slitherlink(MapObject):
         super().__init__(gx, gy)
         self.data['num'] = 0
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
         # 绘制在交叉点的小方块
-        rect = pygame.Rect(0, 0, 24, 24)
+        rect = pygame.Rect(0, 0, cell_size * 0.48, cell_size * 0.48)
         rect.center = (sx, sy) 
         pygame.draw.rect(screen, (255, 255, 255), rect)
         pygame.draw.rect(screen, (0, 0, 0), rect, 2)
         
-        font = pygame.font.SysFont('Arial', 16, bold=True)
+        font = pygame.font.SysFont('Arial', cell_size * 0.32, bold=True)
         txt = font.render(str(self.data['num']), True, (0, 0, 0))
         screen.blit(txt, txt.get_rect(center=rect.center))
 
@@ -202,10 +202,10 @@ class MasyuW(MapObject):
     z_index = 10
     placement_type = "cell"
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        center = (sx + CELL_SIZE // 2, sy + CELL_SIZE // 2)
-        radius = int(CELL_SIZE * 0.35)
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        center = (sx + cell_size // 2, sy + cell_size // 2)
+        radius = int(cell_size * 0.35)
         # 绘制白圆：黑边，白底
         pygame.draw.circle(screen, (255, 255, 255), center, radius)
         pygame.draw.circle(screen, (0, 0, 0), center, radius, 2)
@@ -216,10 +216,10 @@ class MasyuB(MapObject):
     z_index = 10
     placement_type = "cell"
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
-        center = (sx + CELL_SIZE // 2, sy + CELL_SIZE // 2)
-        radius = int(CELL_SIZE * 0.35)
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        center = (sx + cell_size // 2, sy + cell_size // 2)
+        radius = int(cell_size * 0.35)
         # 绘制黑圆：实心黑色
         pygame.draw.circle(screen, (0, 0, 0), center, radius)
 
@@ -248,19 +248,19 @@ class Solve_mode(MapObject):
             style=d.get('style', 'line')
         )
 
-    def draw(self, screen, cam_x, cam_y):
-        sx, sy = self.get_screen_pos(cam_x, cam_y)
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
         color = (63, 72, 204) if self.data['style'] == 'line' else (255, 50, 50)
-        width = 4
+        width = int(cell_size * 0.08)
         
         start_pos, end_pos = None, None
         # 修正坐标计算逻辑：从格子的中心点开始连线
         if self.data['dir'] == 'right':
-            start_pos = (sx + CELL_SIZE / 2, sy + CELL_SIZE / 2)
-            end_pos = (sx + CELL_SIZE * 3 / 2, sy + CELL_SIZE / 2)
+            start_pos = (sx + cell_size / 2, sy + cell_size / 2)
+            end_pos = (sx + cell_size * 3 / 2, sy + cell_size / 2)
         elif self.data['dir'] == 'down':
-            start_pos = (sx + CELL_SIZE / 2, sy + CELL_SIZE / 2)
-            end_pos = (sx + CELL_SIZE / 2, sy + CELL_SIZE * 3 / 2)
+            start_pos = (sx + cell_size / 2, sy + cell_size / 2)
+            end_pos = (sx + cell_size / 2, sy + cell_size * 3 / 2)
             
         if self.data['style'] == 'line':
             pygame.draw.line(screen, color, start_pos, end_pos, width)
@@ -268,7 +268,7 @@ class Solve_mode(MapObject):
             # 画叉
             mid_x = (start_pos[0] + end_pos[0]) // 2
             mid_y = (start_pos[1] + end_pos[1]) // 2
-            offset = 6
+            offset = int(cell_size * 0.12)
             pygame.draw.line(screen, color, (mid_x - offset, mid_y - offset), (mid_x + offset, mid_y + offset), 2)
             pygame.draw.line(screen, color, (mid_x - offset, mid_y + offset), (mid_x + offset, mid_y - offset), 2)
 

@@ -7,7 +7,7 @@
 # 屏幕与网格
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
-CELL_SIZE = 50
+DEFAULT_CELL_SIZE = 50
 
 # 颜色定义 (R, G, B)
 BG_COLOR = (30, 30, 60)         # 背景深蓝

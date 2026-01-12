@@ -28,6 +28,7 @@ class GridEditor:
         # 核心状态数据
         self.objects = [] 
         self.cam_x, self.cam_y = 50, 50
+        self.cell_size = DEFAULT_CELL_SIZE
         
         # 交互状态
         self.selected_item_idx = 0 
@@ -60,13 +61,13 @@ class GridEditor:
     # --- 坐标转换工具 (View Core) ---
     def screen_to_grid(self, sx, sy, mode='cell'):
         if mode == 'vertex':
-            gx = round((sx - self.cam_x) / CELL_SIZE)
-            gy = round((sy - self.cam_y) / CELL_SIZE)
+            gx = round((sx - self.cam_x) / self.cell_size)
+            gy = round((sy - self.cam_y) / self.cell_size)
             return int(gx), int(gy)
-        return (sx - self.cam_x) // CELL_SIZE, (sy - self.cam_y) // CELL_SIZE
+        return int((sx - self.cam_x) // self.cell_size), int((sy - self.cam_y) // self.cell_size)
 
     def grid_to_screen(self, gx, gy):
-        return gx * CELL_SIZE + self.cam_x, gy * CELL_SIZE + self.cam_y
+        return gx * self.cell_size + self.cam_x, gy * self.cell_size + self.cam_y
 
     def show_msg(self, text):
         self.message = text
@@ -142,6 +143,29 @@ class GridEditor:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
+
+            # 处理窗口大小调整
+            elif event.type == pygame.VIDEORESIZE:
+                self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+
+            # 处理滚轮缩放
+            elif event.type == pygame.MOUSEWHEEL:
+                # 获取当前鼠标指向的网格相对位置（缩放锚点）
+                mx, my = pygame.mouse.get_pos()
+                
+                # 记录缩放前的相对偏移量
+                offset_x = (mx - self.cam_x) / self.cell_size
+                offset_y = (my - self.cam_y) / self.cell_size
+                
+                # 计算新尺寸 (限制范围 10 ~ 200)
+                change = event.y * 10  # 缩放速度
+                new_size = max(10, min(200, self.cell_size + change))
+                
+                if new_size != self.cell_size:
+                    self.cell_size = new_size
+                    # 调整 cam_x, cam_y 使得鼠标下的网格点位置保持不变 (定点缩放)
+                    self.cam_x = mx - offset_x * self.cell_size
+                    self.cam_y = my - offset_y * self.cell_size
 
             # 键盘: 快捷键与数值修改
             elif event.type == pygame.KEYDOWN:
