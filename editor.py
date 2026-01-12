@@ -52,7 +52,7 @@ class GridEditor:
             self.buttons.append(Button(x, y, w, h, cls.name, self.font, idx))
             y += h + gap
         # 功能按钮
-        funcs = [("清空", "WIPE"), ("!重置", "CLEAR"), ("LOAD", "IMPORT"), ("SAVE", "EXPORT"), ("SOLVE_ONE", "SOLVE"), ("DEDUCT", "DEDUCT")]
+        funcs = [("清空", "WIPE"), ("!重置", "CLEAR"), ("LOAD", "IMPORT"), ("SAVE", "EXPORT"), ("SOLVE", "SOLVE"), ("DEDUCT", "DEDUCT")]
         for text, action in funcs:
             self.buttons.append(Button(x, y, w, h, text, self.font, action))
             y += h + gap
