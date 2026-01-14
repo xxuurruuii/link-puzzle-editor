@@ -161,7 +161,7 @@ def _build_model(problem_data):
             
             degree = count_true(neighbors)
             
-            # 标记：当前格子是否受到特殊线索的约束
+            # 标记：当前格子是否受到特殊线索（仅端点，Wall和Ice）的约束
             is_constrained = False
             
             # (1) 端点约束
@@ -178,14 +178,13 @@ def _build_model(problem_data):
             
             # (3) Simpleloop 约束
             if pos in simpleloops:
-                solver.ensure(degree == 2)
+                solver.ensure(degree >= 2)
                 solver.ensure(path_id[y, x] != 0)
-                is_constrained = True
             
             # (4) Masyu 白圆约束
             if pos in masyu_w:
                 # 必须经过
-                solver.ensure(degree == 2)
+                solver.ensure(degree >= 2)
                 solver.ensure(path_id[y, x] != 0)
                 
                 # 逻辑: 直行 且 两侧至少有一侧在下一格转弯
@@ -200,12 +199,28 @@ def _build_model(problem_data):
                 u2 = get_v(y - 2, x, neg=True)
                 d2 = get_v(y + 1, x, neg=True)
 
-                # (横向贯通 且 两端其一断开) 或 (纵向贯通 且 两端其一断开)
-                horizontal_pass = (l1 & r1) & (l2 | r2)
-                vertical_pass   = (u1 & d1) & (u2 | d2)
+                solver.ensure(l1 == r1)
+                solver.ensure(u1 == d1)
+
+                # 左邻格(y, x-1)是否有垂直边 / 右邻格(y, x+1)是否有垂直边
+                v_at_l = get_v(y - 1, x - 1) | get_v(y, x - 1)
+                v_at_r = get_v(y - 1, x + 1) | get_v(y, x + 1)
                 
-                solver.ensure(horizontal_pass | vertical_pass)
-                is_constrained = True
+                # 上邻格(y-1, x)是否有水平边 / 下邻格(y+1, x)是否有水平边
+                h_at_u = get_h(y - 1, x - 1) | get_h(y - 1, x)
+                h_at_d = get_h(y + 1, x - 1) | get_h(y + 1, x)
+
+                # 1. 如果横向有线 (l1为真)，则必须满足：(左侧转弯) 或 (右侧转弯)
+                #    其中“侧转弯”定义为：无延伸 且 有垂直边
+                h_condition = (l2 & v_at_l) | (r2 & v_at_r)
+                if l1 is not False:
+                    solver.ensure(l1.then(h_condition))
+
+                # 2. 如果纵向有线 (u1为真)，则必须满足：(上侧转弯) 或 (下侧转弯)
+                v_condition = (u2 & h_at_u) | (d2 & h_at_d)
+                if u1 is not False:
+                    solver.ensure(u1.then(v_condition))
+                
 
             # (5) Masyu 黑圆约束
             if pos in masyu_b:
@@ -221,7 +236,6 @@ def _build_model(problem_data):
                 
                 # (横向有效 & 纵向有效) -> 意味着发生了转弯且延伸足够
                 solver.ensure((valid_l | valid_r) & (valid_u | valid_d))
-                is_constrained = True
 
             # (6) 默认逻辑 (无特殊约束时)
             if not is_constrained:
