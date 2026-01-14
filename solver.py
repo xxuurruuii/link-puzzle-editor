@@ -7,6 +7,7 @@ from collections import defaultdict
 from cspuz.solver import Solver
 from cspuz.graph import Graph, active_edges_acyclic
 from cspuz.constraints import count_true
+from functools import reduce
 
 # --- 内部函数：模型构建 ---
 def _build_model(problem_data):
@@ -37,6 +38,7 @@ def _build_model(problem_data):
     walls = set()         # 墙壁位置
     masyu_w = set()       # Masyu 白圆位置
     masyu_b = set()       # Masyu 黑圆位置
+    ice = set()           # Ice 位置
     
     max_num = 0
 
@@ -53,6 +55,8 @@ def _build_model(problem_data):
             simpleloops.add(pos)
         elif t == 'Wall':
             walls.add(pos)
+        elif t == 'Ice':
+            ice.add(pos)
         elif t == 'EndPoint':
             valid_cells.add(pos)
             num = obj.get('data', {}).get('num', 0)
@@ -107,7 +111,19 @@ def _build_model(problem_data):
                         solver.ensure(~edge)
 
     # 6. 构建图结构与连通性约束
-    graph = Graph(height * width)
+    # 为 Ice 格子分配“第二节点 ID” (用于纵向通道)
+    # 原始节点 ID (0 ~ W*H-1) 用于：普通格子四向、Ice格子横向
+    # 新增节点 ID (W*H ~ ...) 用于：Ice格子纵向
+    base_node_count = height * width
+    ice_v_nodes = {} # 映射: (y, x) -> node_id
+    current_node_id = base_node_count
+    
+    for pos in ice:
+        ice_v_nodes[pos] = current_node_id
+        current_node_id += 1
+    
+    # 创建扩容后的图
+    graph = Graph(current_node_id)
     all_active_edges = []
 
     # 添加横向边及流约束
@@ -123,12 +139,15 @@ def _build_model(problem_data):
     # 添加纵向边及流约束
     for y in range(height - 1):
         for x in range(width):
-            u = y * width + x
-            v = (y + 1) * width + x
-            graph.add_edge(u, v)
+            u_pos = (y, x)
+            v_pos = (y + 1, x)
+            u_node = ice_v_nodes[u_pos] if u_pos in ice else (y * width + x)
+            v_node = ice_v_nodes[v_pos] if v_pos in ice else ((y + 1) * width + x)
+            graph.add_edge(u_node, v_node)
             all_active_edges.append(v_edges[y, x])
-            # 流约束：若边连通，则两侧 path_id 必须相同
-            solver.ensure(v_edges[y, x].then(path_id[y, x] == path_id[y + 1, x]))
+            # 流约束：若边连通且没有 Ice，则两侧 path_id 必须相同
+            if u_pos not in ice and v_pos not in ice:
+                solver.ensure(v_edges[y, x].then(path_id[y, x] == path_id[y + 1, x]))
 
     # --- 辅助函数：Masyu 逻辑专用 ---
     # neg 参数用于处理边界外的取反逻辑，避免直接对 False 取反导致崩溃
@@ -237,7 +256,20 @@ def _build_model(problem_data):
                 # (横向有效 & 纵向有效) -> 意味着发生了转弯且延伸足够
                 solver.ensure((valid_l | valid_r) & (valid_u | valid_d))
 
-            # (6) 默认逻辑 (无特殊约束时)
+            # (6) Ice约束
+            if pos in ice:
+                l1 = get_h(y, x - 1)
+                r1 = get_h(y, x)
+                u1 = get_v(y - 1, x)
+                d1 = get_v(y, x)
+                
+                # 几何约束：必须直线通过
+                solver.ensure(l1 == r1)
+                solver.ensure(u1 == d1)
+                
+                is_constrained = True
+
+            # 默认逻辑 (无特殊约束时)
             if not is_constrained:
                 if pos in valid_cells:
                     # 地板：可以是通路(2)也可以是空(0)
@@ -267,6 +299,38 @@ def _build_model(problem_data):
 
         # 约束: 周围存在的边数量等于提示数字
         solver.ensure(count_true(neighbors) == target_num)
+
+    # D. Ice 格的竖向 id 传递
+    for x in range(width):
+        y = 0
+        while y < height:
+            if (y, x) in ice:
+                # 发现 Ice，寻找连续段的起点和终点
+                start_y = y
+                end_y = y
+                while end_y + 1 < height and (end_y + 1, x) in ice:
+                    end_y += 1
+                
+                # 确定 Ice 段上下的“锚点”格子
+                top_anchor = start_y - 1
+                bottom_anchor = end_y + 1
+                
+                # 只有当 Ice 段上下都在网格范围内时，才需要建立穿透约束
+                if top_anchor >= 0 and bottom_anchor < height:
+                    # 收集穿越这整个 Ice 段所需的所有纵向边
+                    # 从 top_anchor 连到 start_y 的边，一直到 end_y 连到 bottom_anchor 的边
+                    bridge_edges = []
+                    for k in range(top_anchor, bottom_anchor):
+                        bridge_edges.append(v_edges[k, x])
+                    
+                    # 逻辑：如果这一串边全部连通，则 上方非Ice格ID == 下方非Ice格ID
+                    all_connected = reduce(lambda a, b: a & b, bridge_edges)
+                    solver.ensure(all_connected.then(path_id[top_anchor, x] == path_id[bottom_anchor, x]))
+                
+                # 跳过已处理的 Ice 段
+                y = end_y + 1
+            else:
+                y += 1
 
     # 7. 设置 Answer Key (关键)
     # 标记需要从求解结果中读取的变量

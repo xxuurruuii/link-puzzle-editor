@@ -98,6 +98,19 @@ class Wall(MapObject):
         s.fill((0, 0, 0))  # 黑色
         screen.blit(s, (sx, sy))
 
+class Ice(MapObject):
+    name = "Ice"
+    layer_id = "floor_ice" 
+    z_index = 5
+    placement_type = "cell"
+
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        s = pygame.Surface((cell_size, cell_size))
+        s.set_alpha(30)
+        s.fill((0, 0, 255)) # 蓝色
+        screen.blit(s, (sx, sy))
+
 class EndPoint(MapObject):
     name = "端点"
     layer_id = "cell_center"
@@ -274,4 +287,4 @@ class Solve_mode(MapObject):
 
 # --- 注册表 ---
 # 如果添加新物品，只需在这里注册，并在上面定义类即可
-ITEM_REGISTRY = [FloorCell, EndPoint, Simpleloop, Wall, YajilinArrow, Slitherlink, MasyuW, MasyuB, Solve_mode]
+ITEM_REGISTRY = [FloorCell, EndPoint, Simpleloop, Wall, Ice, YajilinArrow, Slitherlink, MasyuW, MasyuB, Solve_mode]
