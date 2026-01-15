@@ -32,7 +32,8 @@ def _build_model(problem_data):
     # 2. 数据分类与映射
     # 将对象分类存储，方便后续应用约束
     valid_cells = set()   # 有效路面 (地板、端点、白圆等)
-    endpoints = {}        # 端点 {pos: number}
+    startpoints = {}      # 起点 {pos: number}  
+    endpoints = {}        # 终点 {pos: number}
     simpleloops = set()   # Simpleloop 线索位置
     slitherlinks = []     # Slitherlink 对象列表 (位于格点)
     walls = set()         # 墙壁位置
@@ -57,6 +58,12 @@ def _build_model(problem_data):
             walls.add(pos)
         elif t == 'Ice':
             ice.add(pos)
+        elif t == 'StartPoint':
+            valid_cells.add(pos)
+            num = obj.get('data', {}).get('num', 0)
+            if num > 0:
+                startpoints[pos] = num
+                max_num = max(max_num, num)
         elif t == 'EndPoint':
             valid_cells.add(pos)
             num = obj.get('data', {}).get('num', 0)
@@ -184,6 +191,10 @@ def _build_model(problem_data):
             is_constrained = False
             
             # (1) 端点约束
+            if pos in startpoints:
+                solver.ensure(degree == 1)
+                solver.ensure(path_id[y, x] == startpoints[pos])
+                is_constrained = True
             if pos in endpoints:
                 solver.ensure(degree == 1)
                 solver.ensure(path_id[y, x] == endpoints[pos])

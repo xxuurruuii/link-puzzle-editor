@@ -111,8 +111,32 @@ class Ice(MapObject):
         s.fill((0, 0, 255)) # 蓝色
         screen.blit(s, (sx, sy))
 
+class StartPoint(MapObject):
+    name = "起点"
+    layer_id = "cell_center"
+    z_index = 101
+    placement_type = "cell"
+    has_number = True      
+
+    def __init__(self, gx, gy):
+        super().__init__(gx, gy)
+        self.data['num'] = 1
+
+    def draw(self, screen, cam_x, cam_y, cell_size):
+        sx, sy = self.get_screen_pos(cam_x, cam_y, cell_size)
+        center = (sx + cell_size // 2, sy + cell_size // 2)
+        
+        # 1. 绘制背景圆
+        pygame.draw.circle(screen, (100, 255, 100), center, int(cell_size * 0.3))
+        
+        # 2. 绘制数字
+        font = pygame.font.SysFont('Arial', int(cell_size * 0.32), bold=True)
+        txt = font.render(str(self.data.get('num', 1)), True, (0, 0, 0))
+        txt_rect = txt.get_rect(center=center)
+        screen.blit(txt, txt_rect)
+
 class EndPoint(MapObject):
-    name = "端点"
+    name = "终点"
     layer_id = "cell_center"
     z_index = 101
     placement_type = "cell"
@@ -287,4 +311,4 @@ class Solve_mode(MapObject):
 
 # --- 注册表 ---
 # 如果添加新物品，只需在这里注册，并在上面定义类即可
-ITEM_REGISTRY = [FloorCell, EndPoint, Simpleloop, Wall, Ice, YajilinArrow, Slitherlink, MasyuW, MasyuB, Solve_mode]
+ITEM_REGISTRY = [FloorCell, StartPoint, EndPoint, Simpleloop, Wall, Ice, YajilinArrow, Slitherlink, MasyuW, MasyuB, Solve_mode]
